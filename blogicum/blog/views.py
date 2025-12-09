@@ -1,12 +1,15 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import Http404, HttpResponseForbidden
 from django.utils import timezone
-from django.core.paginator import Paginator
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import get_user_model
-from django.db.models import Count
 from .models import Post, Category, Comment
 from .forms import PostForm, CommentForm, UserCreationForm, UserUpdateForm
+from .utils import (
+    annotate_comment_count,
+    get_paginator_page,
+    filter_published_posts,
+)
 
 
 User = get_user_model()
@@ -14,17 +17,15 @@ User = get_user_model()
 
 def index(request):
     template = 'blog/index.html'
+
     post_list = Post.objects.select_related(
         'category', 'location', 'author'
-    ).filter(
-        is_published=True,
-        category__is_published=True,
-        pub_date__lte=timezone.now()
-    ).annotate(comment_count=Count('comments')).order_by('-pub_date')
+    )
+    post_list = annotate_comment_count(post_list)
+    post_list = filter_published_posts(post_list)
+    post_list = post_list.order_by('-pub_date')
 
-    paginator = Paginator(post_list, 10)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
+    page_obj = get_paginator_page(post_list, request.GET.get('page'))
 
     context = {'page_obj': page_obj}
     return render(request, template, context)
@@ -67,14 +68,12 @@ def category_posts(request, category_slug):
 
     post_list = category.posts.select_related(
         'location', 'author'
-    ).filter(
-        is_published=True,
-        pub_date__lte=timezone.now()
-    ).annotate(comment_count=Count('comments')).order_by('-pub_date')
+    )
+    post_list = annotate_comment_count(post_list)
+    post_list = filter_published_posts(post_list)
+    post_list = post_list.order_by('-pub_date')
 
-    paginator = Paginator(post_list, 10)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
+    page_obj = get_paginator_page(post_list, request.GET.get('page'))
 
     context = {
         'category': category,
@@ -89,18 +88,12 @@ def profile(request, username):
 
     post_list = author.posts.select_related(
         'category', 'location'
-    ).annotate(comment_count=Count('comments')).order_by('-pub_date')
+    )
+    post_list = annotate_comment_count(post_list)
+    post_list = filter_published_posts(post_list, request.user)
+    post_list = post_list.order_by('-pub_date')
 
-    if author != request.user:
-        post_list = post_list.filter(
-            is_published=True,
-            category__is_published=True,
-            pub_date__lte=timezone.now()
-        )
-
-    paginator = Paginator(post_list, 10)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
+    page_obj = get_paginator_page(post_list, request.GET.get('page'))
 
     context = {
         'profile': author,
