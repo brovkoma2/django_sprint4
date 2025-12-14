@@ -161,18 +161,14 @@ def post_edit(request, post_id):
 
 @login_required
 def post_delete(request, post_id):
-    template = 'blog/detail.html'
     post = get_object_or_404(Post, pk=post_id)
 
     if post.author != request.user:
         return HttpResponseForbidden()
 
-    if request.method == 'POST':
-        post.delete()
-        return redirect('blog:profile', username=request.user.username)
+    post.delete()
 
-    context = {'post': post}
-    return render(request, template, context)
+    return redirect('blog:profile', username=request.user.username)
 
 
 @login_required
