@@ -120,7 +120,7 @@ LOGOUT_REDIRECT_URL = 'blog:index'
 
 LANGUAGE_CODE = 'ru-RU'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Europe/Saratov'
 
 USE_I18N = True
 

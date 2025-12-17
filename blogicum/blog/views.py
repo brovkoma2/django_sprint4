@@ -40,8 +40,8 @@ def post_detail(request, post_id):
     )
 
     can_see_post = (
-        post.is_published and
-        post.category.is_published and
+        post.is_published and 
+        post.category.is_published and 
         post.pub_date <= timezone.now()
     )
     if not can_see_post and post.author != request.user:
