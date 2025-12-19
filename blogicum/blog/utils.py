@@ -4,7 +4,9 @@ from django.db.models import Q, Count
 
 
 def annotate_comment_count(queryset):
-    return queryset.annotate(comment_count=Count('comments'))
+    return queryset.annotate(
+        comment_count=Count('comments')
+    ).order_by('-pub_date')
 
 
 def get_paginator_page(queryset, page_number, posts_per_page=10):
